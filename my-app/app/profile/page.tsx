@@ -8,10 +8,6 @@ interface ProfileData {
   year: string;
   aboutMe: string;
   profilePic: string;
-  stats: {
-    posts: number;
-    followers: number;
-  };
 }
 
 export default function ProfilePage() {
@@ -21,8 +17,7 @@ export default function ProfilePage() {
     major: "Computer Science",
     year: "Junior",
     aboutMe: "Passionate about full-stack dev and AI.",
-    profilePic: "https://via.placeholder.com/150",
-    stats: { posts: 12, followers: 450 }
+    profilePic: '/noimage.png',
   });
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -38,7 +33,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '40px auto', textAlign: 'center' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'center', alignItems: 'center', width: '100%', marginTop: '20px', marginBottom: '20px' }}>
       <img 
         src={profile.profilePic} 
         style={{ borderRadius: '50%', width: '150px', height: '150px', objectFit: 'cover' }} 
@@ -49,12 +44,15 @@ export default function ProfilePage() {
           <input type="file" accept="image/*" onChange={handleImageChange} />
           <input name="name" value={profile.name} onChange={handleChange} />
           <input name="major" value={profile.major} onChange={handleChange} />
+          <input name="year" value={profile.year} onChange={handleChange} />
+          <textarea name="aboutMe" value={profile.aboutMe} onChange={handleChange} />
           <button onClick={() => setIsEditing(false)}>Save</button>
         </div>
       ) : (
-        <div>
+        <div style={{ marginTop: '20px' }}>
           <h1>{profile.name}</h1>
           <p>{profile.major} - {profile.year}</p>
+          <p>{profile.aboutMe}</p>
           <button onClick={() => setIsEditing(true)}>Edit Profile</button>
         </div>
       )}
