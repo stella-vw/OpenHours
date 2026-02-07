@@ -4,42 +4,68 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
 
+// 1. Load Environment Variables
 dotenv.config();
+
 const app = express();
 
-// Middleware
+// 2. Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // ADDED THIS to read form data
+app.use(express.urlencoded({ extended: true })); 
 app.use(cors());
 
-
-// 3. Import Models
-const User = require('./models/User'); // Removed 'models/'
-const Post = require('./models/Post'); // Removed 'models/'
+// 3. Import Models 
+// Adjusting these based on your 'ls' output: User is in models, Post is in abc root.
+const User = require('./models/User'); 
+const Post = require('./models/Post');        
 
 // 4. Database Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("🚀 MongoDB Connected Successfully!"))
   .catch((err) => console.log("❌ MongoDB Connection Failed:", err));
 
-// --- ROUTES ---
+// 5. ROUTES
 
-// Home route: Shows your HTML form
+// --- HOME ROUTE ---
 app.get('/', (req, res) => {
-  // Use process.cwd() to find the html folder in your 'abc' directory
-  res.sendFile(path.join(process.cwd(), 'html', 'create-post.html'));
+  // Fixed: Sending file directly from 'abc' folder based on your 'ls' results
+  res.sendFile(path.join(__dirname, 'html','create-post.html'));
 });
 
-// CREATE POST ROUTE: Matches the 'action' in your HTML form
+// --- REGISTER ROUTE ---
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const newUser = new User({ username, password });
+    await newUser.save();
+    res.status(201).json({ message: "User created successfully!" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// --- LOGIN ROUTE ---
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user || user.password !== password) {
+      return res.status(400).json({ message: "Invalid username or password" });
+    }
+    res.json({ message: "Login successful!", user: { username: user.username } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- CREATE POST ROUTE ---
 app.post('/api/posts', async (req, res) => {
   try {
     const { location, type, time, notes } = req.body;
-    
     const newPost = new Post({
-      title: location, // Mapping 'location' to 'title' for now
+      title: location, 
       type: type,
       notes: notes,
-      // We'll leave coordinates empty for now or use McGill defaults
       location: { type: 'Point', coordinates: [-73.5772, 45.5048] } 
     });
 
@@ -50,10 +76,7 @@ app.post('/api/posts', async (req, res) => {
   }
 });
 
-// Login/Register routes remain the same below...
-app.post('/api/register', async (req, res) => { /* your existing code */ });
-app.post('/api/login', async (req, res) => { /* your existing code */ });
-
+// 6. Start the Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
