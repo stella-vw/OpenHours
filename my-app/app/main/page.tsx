@@ -299,7 +299,7 @@ const Dashboard = () => {
             <div className="bg-red-600 w-10 h-10 rounded-xl flex items-center justify-center">
                 <MapPin className="text-white w-6 h-6" />
             </div>
-            <span className="font-bold text-gray-800 pr-2 hidden sm:block">The Casual Hang</span>
+            <span className="font-bold text-gray-800 pr-2 hidden sm:block">OnMyWay!</span>
         </div>
       </div>
 
@@ -373,7 +373,16 @@ const Dashboard = () => {
             )  
             }
         </div>
+         
       )}
+    
+      {/*profile button*/}
+      <div className="absolute top-8 right-6 z-20">
+            <button onClick={() => router.push('/profile')}>
+                <Avatar url={user.profilePic || '/noimage.png/' } size="lg" fallbackText={user.handle} className="shadow-md border-2 border-white" />
+            </button>
+        </div>
+
 
       {/* 4. "New Session" Modal (UPDATED UI) */}
       {isPlanting && (
@@ -499,7 +508,7 @@ const Dashboard = () => {
 export default function App() {
   return (
     // This is the key you provided for Google Maps (starting with AIza...m2Q)
-    <APIProvider apiKey="">
+    <APIProvider apiKey="AIzaSyDAGWOcRdniYbT7aVnV0WPvQMj53mk8m2Q">
       <Dashboard/>
     </APIProvider>
   );
