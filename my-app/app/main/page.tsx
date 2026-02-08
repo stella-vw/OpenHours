@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CAMPUS_BUILDINGS } from '../../../buildings';
+import { CAMPUS_BUILDINGS } from '../buildings';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -191,28 +191,47 @@ const Dashboard = () => {
   }, [router]);
 
     // 1. Add this useEffect to fetch all posts from the DB
-    useEffect(() => {
-    const fetchAllPosts = async () => {
-        try {
-        // Use your actual API endpoint
-        const response = await fetch('/api/posts'); 
-        if (response.ok) {
-            const data = await response.json();
-            // MongoDB returns an array; set it to state
-            setAllFlags(data);
-        }
-        } catch (err) {
-        console.error("Failed to fetch posts from database:", err);
-        }
-    };
+  useEffect(() => {
+  const fetchAllPosts = async () => {
+    if (!user) return; // Don't fetch until user is loaded
 
-    // Run immediately on load
-    fetchAllPosts();
+    try {
+      const response = await fetch('/api/posts'); 
+      if (response.ok) {
+        const data = await response.json();
+        setAllFlags(data);
 
-    // Refresh every 15 seconds so the map feels "live"
-    const interval = setInterval(fetchAllPosts, 15000);
-    return () => clearInterval(interval);
-    }, []);
+        // CHECK IF I HAVE A PIN IN THE DB
+        const mySavedPin = data.find((flag: any) => 
+          String(flag.authorId || flag.author) === String(user.username)
+        );
+
+        if (!mySavedPin) {
+          setMyFlag(null);
+        } else {
+          // 3. If it IS there, keep it synced (optional but recommended)
+          setMyFlag({
+            id: mySavedPin._id,
+            authorId: user.username,
+            buildingIndex: mySavedPin.buildingName,
+            startTime: 0, 
+            durationMinutes: 0,
+            status: mySavedPin.title,
+            vibe: mySavedPin.type,
+            socmed: "",
+          });
+          setSelectedPlace(mySavedPin.buildingName);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch posts from database:", err);
+    }
+  };
+
+  fetchAllPosts();
+  const interval = setInterval(fetchAllPosts, 5000);
+  return () => clearInterval(interval);
+}, [user]); // Add user to dependencies
   
   // Search State
 //   const [searchQuery, setSearchQuery] = useState('');
@@ -232,7 +251,7 @@ const Dashboard = () => {
   // Handle Planting a Flag
   const handlePlantFlag = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedPlace || !user) return;
+    if (selectedPlace === null || !user) return;
 
     const postData = {
       title: comment || vibe,
@@ -287,6 +306,28 @@ const Dashboard = () => {
     } 
   }; 
 
+  //trending
+  const trending = React.useMemo(() => {
+    const counts: { [key: number]: number } = {};
+    
+    allFlags.forEach((flag) => {
+      const idx = flag.buildingName;
+      if (idx !== undefined) {
+        counts[idx] = (counts[idx] || 0) + 1;
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([index, count]) => ({
+        index: Number(index),
+        count,
+        name: CAMPUS_BUILDINGS[Number(index)]?.name || "Unknown"
+      }))
+      .filter(item => item.count >= 3)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+  }, [allFlags]); // Only recalculates when the map data changes
+
   // The final check before rendering
   if (!user) return <div className="h-screen w-screen flex items-center justify-center bg-gray-50 text-gray-400 font-bold">Loading OnMyWay!...</div>;
 
@@ -301,6 +342,48 @@ const Dashboard = () => {
             </div>
             <span className="font-bold text-gray-800 pr-2 hidden sm:block">OnMyWay!</span>
         </div>
+      </div>
+
+      {/* trending section */}
+      <div className="absolute top-20 left-4 z-10 flex flex-col gap-2 pointer-events-none">
+        {trending.length > 0 && (
+          <div className="pointer-events-auto bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-lg border border-white/50 w-48 animate-in slide-in-from-left-5 duration-500">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="bg-orange-500 p-1 rounded-lg">
+                <span className="text-[10px]">🔥</span>
+              </div>
+              <h3 className="text-xs font-black uppercase tracking-tighter text-gray-500">Trending Now</h3>
+            </div>
+            
+            <div className="space-y-2">
+              {trending.map((item, i) => (
+                <button 
+                  key={item.index}
+                  onClick={() => {
+                    if (map) {
+                      map.panTo({ 
+                        lat: CAMPUS_BUILDINGS[item.index].lat, 
+                        lng: CAMPUS_BUILDINGS[item.index].lng 
+                      });
+                      map.setZoom(18);
+                    }
+                  }}
+                  className="flex items-center justify-between w-full group transition-all"
+                >
+                  <div className="flex flex-col items-start">
+                    <span className="text-[11px] font-bold text-gray-800 group-hover:text-red-600 truncate w-32 text-left">
+                      {item.name}
+                    </span>
+                    <span className="text-[9px] text-gray-400 font-medium">
+                      {item.count} {item.count === 1 ? 'person' : 'people'}
+                    </span>
+                  </div>
+                  <div className={`h-1.5 w-1.5 rounded-full ${i === 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Google Map */}
@@ -320,8 +403,6 @@ const Dashboard = () => {
                 // 1. Convert everything to strings to prevent ID vs String mismatches
                 const flagAuthorId = String(flag.authorId || flag.author || "");
                 const myId = String(user?.username || "");
-
-                // 2. If they match, this is ME, so return false to hide from "All Flags"
                 return flagAuthorId !== myId;
             })
             .map((flag) => (
@@ -388,7 +469,7 @@ const Dashboard = () => {
       {/*profile button*/}
       <div className="absolute top-8 right-6 z-20">
             <button onClick={() => router.push('/profile')}>
-                <Avatar url={user.profilePic || '/noimage.png/' } size="lg" fallbackText={user.handle} className="shadow-md border-2 border-white" />
+                <Avatar url={user.profilePic || '/noimage.png' } size="lg" fallbackText={user.handle} className="shadow-md border-2 border-white" />
             </button>
         </div>
 
@@ -402,7 +483,7 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
                     <h2 className="text-xl font-black text-gray-900">New Session</h2>
                     <button onClick={() => setIsPlanting(false)} className="bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition-colors">
-                        <X size={20} />
+                        <X size={20} /> 
                     </button>
                 </div>
                 
@@ -517,7 +598,7 @@ const Dashboard = () => {
 export default function App() {
   return (
     // This is the key you provided for Google Maps (starting with AIza...m2Q)
-    <APIProvider apiKey="AIzaSyDAGWOcRdniYbT7aVnV0WPvQMj53mk8m2Q">
+    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
       <Dashboard/>
     </APIProvider>
   );
