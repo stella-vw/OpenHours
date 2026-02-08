@@ -520,21 +520,11 @@ const Dashboard = () => {
                         {/* 1. Location Input */}
                         <div>
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Location</label>
-                            <div className="relative">
-                                <label>Where are you?</label>
-                                <select 
-                                value={selectedPlace} 
-                                onChange={(e) => {
-                                    const val = Number(e.target.value);
-                                    setSelectedPlace(val);
-                                    setNearbySessions([]); 
-                                }}
-                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-red-500"
-                              >
-                                {CAMPUS_BUILDINGS.map((loc, i) => (
-                                    <option key={i} value={i}>{loc.name}</option>
-                                ))}
-                              </select>
+                            <div className="flex justify-between items-center rounded-xl text-sm transition-all">
+                                <label className="text-gray-600">Where are you?</label>
+                                <select className="bg-transparent border border-gray-300 rounded p-1 outline-none" value={selectedPlace} onChange={(e) => setSelectedPlace(Number(e.target.value))}>
+                                    {CAMPUS_BUILDINGS.map((loc, i) => <option key={i} value={i}>{loc.name}</option>)}
+                                </select>
                             </div>
                         </div>
 

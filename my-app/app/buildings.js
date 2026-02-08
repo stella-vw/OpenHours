@@ -1,3 +1,5 @@
+// list of all campus buildings and their lats/lngs for dropdown
+
 export const CAMPUS_BUILDINGS = [
   { name: "Pick Location", lat: 0, lng : 0 },
   { name: "McMed", lat: 45.50303299833591, lng: -73.5822537913886 },
