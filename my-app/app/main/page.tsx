@@ -417,25 +417,10 @@ const Dashboard = () => {
             <div className="relative flex flex-col items-center group cursor-pointer hover:z-50">
               <div className="absolute bottom-16 hidden group-hover:flex flex-col items-center bg-white p-3 rounded-lg shadow-xl border border-gray-200 w-48 text-center z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <h3 className="font-bold text-sm text-gray-900 mb-2">
-                    {flag.authorName || 'Unknown User'}
+                    {flag.authorId || 'Unknown User'}
                   </h3>
-                  {flag.username && (
-                    <p className="text-xs text-gray-500 mb-2">@{flag.username}</p>
-                  )}
-                  {flag.status && (
-                    <p className="text-xs text-gray-500 mb-2">
-                      <span className="font-semibold text-gray-400">Contact:</span> {flag.status}
-                    </p>
-                  )}
-                  {flag.socmed && (
-                    <p className="text-xs text-gray-500 mb-2">
-                      <span className="font-semibold text-gray-400">Contact:</span> {flag.socmed}
-                    </p>
-                  )}
-                  {flag.durationMinutes && (
-                    <p className="text-xs text-gray-500 mb-2">
-                      <span className="font-semibold text-gray-400">Time Remaining:</span> {flag.durationMinutes}
-                    </p>
+                  {CAMPUS_BUILDINGS[flag.buildingIndex]?.name && (
+                    <p className="text-xs text-gray-500 mb-2">{'Location: ' + CAMPUS_BUILDINGS[flag.buildingIndex].name}</p>
                   )}
                 <div className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 w-full">
                   "{flag.status || flag.title}"
