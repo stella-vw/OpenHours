@@ -394,9 +394,9 @@ const Dashboard = () => {
                         {/* 1. Location Input */}
                         <div>
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Location</label>
-                            <div className="relative">
-                                <label>Where are you?</label>
-                                <select value={selectedPlace} onChange={(e) => setSelectedPlace(Number(e.target.value))}>
+                            <div className="flex justify-between items-center rounded-xl text-sm transition-all">
+                                <label className="text-gray-600">Where are you?</label>
+                                <select className="bg-transparent border border-gray-300 rounded p-1 outline-none" value={selectedPlace} onChange={(e) => setSelectedPlace(Number(e.target.value))}>
                                     {CAMPUS_BUILDINGS.map((loc, i) => <option key={i} value={i}>{loc.name}</option>)}
                                 </select>
                             </div>
@@ -499,7 +499,7 @@ const Dashboard = () => {
 export default function App() {
   return (
     // This is the key you provided for Google Maps (starting with AIza...m2Q)
-    <APIProvider apiKey="">
+    <APIProvider apiKey="AIzaSyDAGWOcRdniYbT7aVnV0WPvQMj53mk8m2Q">
       <Dashboard/>
     </APIProvider>
   );
