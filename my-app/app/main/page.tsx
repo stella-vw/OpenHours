@@ -203,47 +203,43 @@ const Dashboard = () => {
   const placesLibrary = useMapsLibrary('places');
 
   // Handle Planting a Flag
+  // Handle Planting a Flag
   const handlePlantFlag = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPlace || !user) return;
 
-    // 1. Prepare the data for MongoDB
     const postData = {
-      title: comment || vibe, 
+      title: comment || vibe,
       buildingName: selectedPlace.name,
       type: vibe,
       location: {
         type: 'Point',
         coordinates: [selectedPlace.lng, selectedPlace.lat]
       },
-      authorId: user.username,     // This is the ID/Username
-      authorName: user.handle,     // Store the name for the label
-      authorPic: user.profilePic   // Store the picture URL directly!
+      authorId: user.username,
+      authorName: user.handle,
+      authorPic: user.profilePic
     };
 
     try {
-      // 2. Send to your Backend (ensure your server is running on port 3000)
       const response = await fetch('http://localhost:3000/api/posts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postData),
       });
 
       if (response.ok) {
         const savedPost = await response.json();
-        console.log("Post saved to MongoDB:", savedPost);
-
-        // 3. Update the UI state (only after successful DB save)
+        
         const newFlag: Flag = {
-          id: savedPost._id, // Use the real ID from MongoDB
+          id: savedPost._id,
           userId: user.username,
           location: selectedPlace,
           startTime: Date.now(),
           durationMinutes: duration,
           status: postData.title,
           vibe: vibe,
+          socmed: socmed,
         };
         
         setMyFlag(newFlag);
@@ -252,7 +248,6 @@ const Dashboard = () => {
         setSearchQuery('');
         setPredictions([]);
 
-        // Pan map
         if (map) {
           map.panTo({ lat: selectedPlace.lat, lng: selectedPlace.lng });
           map.setZoom(18);
@@ -263,29 +258,8 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error connecting to backend:", err);
       alert("Backend server is not responding.");
-    const newFlag: Flag = {
-      id: `flag-${Date.now()}`,
-      userId: user.id,
-      location: selectedPlace,
-      startTime: Date.now(),
-      durationMinutes: duration,
-      status: comment || vibe, // Fallback to vibe if comment is empty
-      vibe: vibe,
-      socmed: socmed,
-    };
-    
-    setMyFlag(newFlag);
-    setIsPlanting(false);
-    setComment('');
-    setSearchQuery('');
-    setPredictions([]);
-    
-    // Pan map to new location
-    if (map) {
-      map.panTo({ lat: selectedPlace.lat, lng: selectedPlace.lng });
-      map.setZoom(18);
-    }
-  };
+    } // <--- This was missing!
+  }; // <--- This was missing!
 
   // --- GOOGLE PLACES AUTOCOMPLETE ---
   useEffect(() => {
@@ -315,23 +289,22 @@ const Dashboard = () => {
     });
   }, [searchQuery, placesLibrary, map]);
 
-const [allFlags, setAllFlags] = useState<any[]>([]);
+  const [allFlags, setAllFlags] = useState<any[]>([]);
 
-useEffect(() => {
-const fetchFlags = async () => {
-    try {
-    const res = await fetch('/api/posts');
-    const data = await res.json();
-    if (Array.isArray(data)) {
-        setAllFlags(data);
-    }
-    } catch (err) {
-    console.error("Error loading pins:", err);
-    }
-};
-
-fetchFlags();
-}, []);
+  useEffect(() => {
+    const fetchFlags = async () => {
+      try {
+        const res = await fetch('/api/posts');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAllFlags(data);
+        }
+      } catch (err) {
+        console.error("Error loading pins:", err);
+      }
+    };
+    fetchFlags();
+  }, []);
 
   const handleSelectPrediction = (placeId: string) => {
     if (!placesLibrary || !map) return;
@@ -342,7 +315,6 @@ fetchFlags();
       fields: ['name', 'geometry', 'types']
     }, (place, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
-        
         setSelectedPlace({
           id: placeId,
           name: place.name || 'Unknown',
@@ -350,15 +322,14 @@ fetchFlags();
           lng: place.geometry.location.lng(),
           type: 'other'
         });
-
         setSearchQuery(place.name || '');
         setPredictions([]);
       }
     });
   };
 
-if (!user) return <div className="h-screen w-screen flex items-center justify-center bg-gray-50 text-gray-400 font-bold">Loading Garden...</div>;
-
+  // The final check before rendering
+  if (!user) return <div className="h-screen w-screen flex items-center justify-center bg-gray-50 text-gray-400 font-bold">Loading Garden...</div>;
 
   return (
     <div className="relative h-screen w-screen flex flex-col overflow-hidden bg-gray-100">
@@ -378,7 +349,7 @@ if (!user) return <div className="h-screen w-screen flex items-center justify-ce
     <Map
         defaultZoom={16}
         defaultCenter={INITIAL_CAMERA.center}
-        mapId="DEMO_MAP_ID" 
+        mapId="9086dea976fc7f72a31d941c" 
         disableDefaultUI={true}
         className="w-full h-full"
     >
@@ -586,8 +557,8 @@ if (!user) return <div className="h-screen w-screen flex items-center justify-ce
 export default function App() {
   return (
     // This is the key you provided for Google Maps (starting with AIza...m2Q)
-    <APIProvider apiKey="API KEY">
-      <Dashboard />
+    <APIProvider apiKey="AIzaSyDAGWOcRdniYbT7aVnV0WPvQMj53mk8m2Q">
+      <Dashboard/>
     </APIProvider>
   );
 }
