@@ -51,6 +51,7 @@ type Flag = {
   durationMinutes: number;
   status: string; // "Cramming for COMP 202"
   vibe: 'study' | 'gym' | 'cafe' | 'chill';
+  socmed: string;
 };
 
 // --- Mock Data ---
@@ -184,6 +185,7 @@ const Dashboard = () => {
   const [comment, setComment] = useState('');
   const [vibe, setVibe] = useState<'study' | 'gym' | 'cafe' | 'chill'>('study');
   const [duration, setDuration] = useState(60);
+  const [socmed, setSocmed] = useState("");
 
   // Map Hooks
   const map = useMap();
@@ -202,6 +204,7 @@ const Dashboard = () => {
       durationMinutes: duration,
       status: comment || vibe, // Fallback to vibe if comment is empty
       vibe: vibe,
+      socmed: socmed,
     };
     
     setMyFlag(newFlag);
@@ -297,30 +300,87 @@ const Dashboard = () => {
       {/* 2. Google Map */}
       <div className="w-full h-full">
         <Map
-          defaultZoom={16}
+          defaultZoom={17}
           defaultCenter={INITIAL_CAMERA.center}
-          mapId="DEMO_MAP_ID" 
+          mapId="9086dea976fc7f72a31d941c" 
           disableDefaultUI={true}
           className="w-full h-full"
         >
             {/* Render My Flag */}
             {myFlag && !user.isGhost && (
-                <AdvancedMarker 
+                <AdvancedMarker
                     position={{ lat: myFlag.location.lat, lng: myFlag.location.lng }}
                     onClick={() => setIsEditingProfile(true)}
+                    className="z-10 hover:z-50" // Ensure marker pops to front on hover
+                    collisionBehavior={google.maps.CollisionBehavior.OPTIONAL_AND_HIDES_LOWER_PRIORITY}
                 >
-                   {/* Custom HTML Pin */}
-                    <div className="relative flex flex-col items-center group cursor-pointer hover:z-50">
-                        <div className="bg-white px-3 py-1 rounded-full shadow-md text-[11px] font-extrabold text-gray-800 border border-gray-100 mb-1 whitespace-nowrap">
-                            {myFlag.status}
+                    {/* 1. The "group" class here allows children to react when this container is hovered 
+                    */}
+                    <div className="relative flex flex-col items-center group cursor-pointer">
+                    
+                    {/* --- START HOVER WINDOW --- */}
+                    <div className="absolute bottom-full mb-4 w-64 bg-white rounded-2xl shadow-2xl p-0 hidden group-hover:block z-[100] animate-in fade-in slide-in-from-bottom-2 border border-gray-100">
+                        
+                        {/* Header (Major & Handle) */}
+                        <div className="bg-red-800 p-3 rounded-t-2xl flex items-center gap-3">
+                        <Avatar url={user.photoUrl} size="sm" className="border border-white/20" />
+                        <div>
+                            <h3 className="text-white font-bold text-sm leading-tight">{user.handle}</h3>
+                            <p className="text-white text-xs">{user.major}</p>
                         </div>
-                        <div className="w-12 h-12 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white relative z-10">
-                            <Avatar url={user.photoUrl} size="lg" fallbackText={user.handle} className="w-full h-full" />
                         </div>
-                        <div className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full -mt-2 relative z-20 font-bold tracking-wide shadow-sm">
-                            YOU
+
+                        {/* Body (Status & Details) */}
+                        <div className="p-4 space-y-3">
+                        {/* The Comment/Status */}
+                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                            <p className="text-gray-700 text-sm font-medium">
+                                "{myFlag.status}"
+                            </p>
                         </div>
-                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white absolute top-[calc(100%-20px)] shadow-sm"></div>
+
+                        {/* Info Grid */}
+                        <div className="flex justify-between items-center text-xs text-gray-500 font-semibold">
+                            <div className="flex items-center gap-1 bg-red-50 px-2 py-1 rounded-md">
+                                <Coffee size={12} />
+                                <span>{myFlag.vibe}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                <span>Until {new Date(myFlag.startTime + myFlag.durationMinutes * 60000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                        </div>
+                        
+                        {/* Contact Info (if available) */}
+                        {socmed && (
+                            <div className="pt-2 border-t border-gray-100 text-xs text-center text-gray-400">
+                            Contact: <span className="text-gray-400 font-bold">{socmed}</span>
+                            </div>
+                        )}
+                        </div>
+
+                        {/* Little triangle pointing down to the pin */}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white"></div>
+                    </div>
+                    {/* --- END HOVER WINDOW --- */}
+
+                    {/* This is your original Pin UI.
+                        I hid the original small status bubble on hover (group-hover:opacity-0)
+                        so it doesn't clutter the view when the big window is open.
+                    */}
+                    <div className="bg-white px-3 py-1 rounded-full shadow-md text-[11px] font-extrabold text-gray-800 border border-gray-100 mb-1 whitespace-nowrap transition-opacity group-hover:opacity-0">
+                        {myFlag.status}
+                    </div>
+
+                    <div className="w-12 h-12 rounded-full border-4 border-white shadow-lg overflow-hidden bg-white relative z-10 transition-transform group-hover:scale-110 duration-200">
+                        <Avatar url={user.photoUrl} size="lg" fallbackText={user.handle} className="w-full h-full" />
+                    </div>
+                    
+                    <div className="bg-red-600 text-white text-[9px] px-2 py-0.5 rounded-full -mt-2 relative z-20 font-bold tracking-wide shadow-sm">
+                        YOU
+                    </div>
+                    
+                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-white absolute top-[calc(100%-20px)] shadow-sm"></div>
                     </div>
                 </AdvancedMarker>
             )}
@@ -456,11 +516,13 @@ const Dashboard = () => {
                         {/* 5. Contact Method (Static UI for now) */}
                         <div>
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Contact Method</label>
-                            <div className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl flex justify-between items-center cursor-not-allowed opacity-70">
-                                <span className="text-sm font-medium text-gray-700">Don't share contact</span>
-                                <div className="w-4 h-4 bg-black rounded-full"></div>
-                            </div>
-                            <p className="text-[10px] text-gray-400 mt-2">Add socials in your profile to share them here.</p>
+                                <textarea 
+                                placeholder="Provide a contact method."
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-sm min-h-[10px]"
+                                value={socmed}
+                                onChange={(e) => setSocmed(e.target.value)}
+                                maxLength={80}
+                                />
                         </div>
                     </form>
                 </div>
@@ -490,8 +552,7 @@ const Dashboard = () => {
 
 export default function App() {
   return (
-    // This is the key you provided for Google Maps (starting with AIza...m2Q)
-    <APIProvider apiKey="">
+    <APIProvider apiKey={'AIzaSyDAGWOcRdniYbT7aVnV0WPvQMj53mk8m2Q'}>
       <Dashboard />
     </APIProvider>
   );
