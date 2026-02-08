@@ -432,6 +432,11 @@ const Dashboard = () => {
                       <span className="font-semibold text-gray-400">Contact:</span> {flag.socmed}
                     </p>
                   )}
+                  {flag.durationMinutes && (
+                    <p className="text-xs text-gray-500 mb-2">
+                      <span className="font-semibold text-gray-400">Time Remaining:</span> {flag.durationMinutes}
+                    </p>
+                  )}
                 <div className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 w-full">
                   "{flag.status || flag.title}"
                 </div>
