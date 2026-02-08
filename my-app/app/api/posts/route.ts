@@ -28,6 +28,8 @@ export async function POST(request: Request) {
 
 // Keep your GET route to fetch the pins for the map
 export async function GET() {
+
+    
   try {
     await dbConnect();
     const posts = await Post.find({});
