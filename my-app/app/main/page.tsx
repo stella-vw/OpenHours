@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { CAMPUS_BUILDINGS } from '../../../buildings';
+import { useRouter } from 'next/navigation';
+
 import {
   APIProvider,
   Map,
@@ -21,16 +24,16 @@ import {
   Dumbbell,
   MessageCircle,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+
 // --- Types ---
 
-type Location = {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  type: 'cafe' | 'library' | 'study' | 'gym' | 'other';
-};
+// type Location = {
+//   id: string;
+//   name: string;
+//   lat: number;
+//   lng: number;
+//   type: 'cafe' | 'library' | 'study' | 'gym' | 'other';
+// };
 
 type User = {
   username: string;
@@ -44,7 +47,7 @@ type User = {
 type Flag = {
   id: string;
   userId: string;
-  location: Location;
+  buildingIndex: number;
   startTime: number;
   durationMinutes: number;
   status: string; 
@@ -154,13 +157,13 @@ const ProfilePopup = ({ user, onClose }: { user: User, onClose: () => void }) =>
 );
 
 // --- MAIN MAP COMPONENT ---
-
 const Dashboard = () => {
   // State - Initialized with default user immediately
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [myFlag, setMyFlag] = useState<Flag | null>(null);
   const [isPlanting, setIsPlanting] = useState(false);
+  const [allFlags, setAllFlags] = useState<any[]>([]);
   
   useEffect(() => {
     const username = localStorage.getItem("loggedUser");
@@ -188,9 +191,9 @@ const Dashboard = () => {
   }, [router]);
   
   // Search State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
-  const [selectedPlace, setSelectedPlace] = useState<Location | null>(null);
+//   const [searchQuery, setSearchQuery] = useState('');
+//   const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState(0);
   
   // New Flag State
   const [comment, setComment] = useState('');
@@ -203,18 +206,17 @@ const Dashboard = () => {
   const placesLibrary = useMapsLibrary('places');
 
   // Handle Planting a Flag
-  // Handle Planting a Flag
   const handlePlantFlag = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPlace || !user) return;
 
     const postData = {
       title: comment || vibe,
-      buildingName: selectedPlace.name,
+      buildingName: selectedPlace,
       type: vibe,
       location: {
         type: 'Point',
-        coordinates: [selectedPlace.lng, selectedPlace.lat]
+        coordinates: [CAMPUS_BUILDINGS[selectedPlace].lng, CAMPUS_BUILDINGS[selectedPlace].lat]
       },
       authorId: user.username,
       authorName: user.handle,
@@ -234,7 +236,7 @@ const Dashboard = () => {
         const newFlag: Flag = {
           id: savedPost._id,
           userId: user.username,
-          location: selectedPlace,
+          buildingIndex: selectedPlace,
           startTime: Date.now(),
           durationMinutes: duration,
           status: postData.title,
@@ -245,11 +247,11 @@ const Dashboard = () => {
         setMyFlag(newFlag);
         setIsPlanting(false);
         setComment('');
-        setSearchQuery('');
-        setPredictions([]);
+        // setSearchQuery('');
+        // setPredictions([]);
 
         if (map) {
-          map.panTo({ lat: selectedPlace.lat, lng: selectedPlace.lng });
+          map.panTo({ lat: CAMPUS_BUILDINGS[selectedPlace].lat, lng: CAMPUS_BUILDINGS[selectedPlace].lng });
           map.setZoom(18);
         }
       } else {
@@ -258,75 +260,8 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error connecting to backend:", err);
       alert("Backend server is not responding.");
-    } // <--- This was missing!
-  }; // <--- This was missing!
-
-  // --- GOOGLE PLACES AUTOCOMPLETE ---
-  useEffect(() => {
-    if (!placesLibrary || !searchQuery || searchQuery.length < 2) {
-      setPredictions([]);
-      return;
-    }
-
-    const service = new placesLibrary.AutocompleteService();
-    const center = map ? map.getCenter() : INITIAL_CAMERA.center;
-    
-    const request: google.maps.places.AutocompletionRequest = {
-      input: searchQuery,
-      locationBias: {
-        radius: 5000, 
-        center: center as google.maps.LatLngLiteral 
-      },
-      componentRestrictions: { country: 'ca' }
-    };
-
-    service.getPlacePredictions(request, (results, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-        setPredictions(results);
-      } else {
-        setPredictions([]);
-      }
-    });
-  }, [searchQuery, placesLibrary, map]);
-
-  const [allFlags, setAllFlags] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchFlags = async () => {
-      try {
-        const res = await fetch('/api/posts');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setAllFlags(data);
-        }
-      } catch (err) {
-        console.error("Error loading pins:", err);
-      }
-    };
-    fetchFlags();
-  }, []);
-
-  const handleSelectPrediction = (placeId: string) => {
-    if (!placesLibrary || !map) return;
-
-    const service = new placesLibrary.PlacesService(map);
-    service.getDetails({
-      placeId: placeId,
-      fields: ['name', 'geometry', 'types']
-    }, (place, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && place && place.geometry && place.geometry.location) {
-        setSelectedPlace({
-          id: placeId,
-          name: place.name || 'Unknown',
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-          type: 'other'
-        });
-        setSearchQuery(place.name || '');
-        setPredictions([]);
-      }
-    });
-  };
+    } 
+  }; 
 
   // The final check before rendering
   if (!user) return <div className="h-screen w-screen flex items-center justify-center bg-gray-50 text-gray-400 font-bold">Loading Garden...</div>;
@@ -353,6 +288,8 @@ const Dashboard = () => {
         disableDefaultUI={true}
         className="w-full h-full"
     >
+         
+
         {/* A. Render ALL Existing Pins from Database */}
         {allFlags.map((flag) => (
         <AdvancedMarker 
@@ -381,7 +318,7 @@ const Dashboard = () => {
         {/* B. Render My "Active" Flag (The local blue 'YOU' marker) */}
         {myFlag && (
         <AdvancedMarker 
-            position={{ lat: myFlag.location.lat, lng: myFlag.location.lng }}
+            position={{ lat: CAMPUS_BUILDINGS[selectedPlace].lat, lng: CAMPUS_BUILDINGS[selectedPlace].lng }}
         >
             <div className="relative flex flex-col items-center group cursor-pointer hover:z-50">
             <div className="bg-white px-3 py-1 rounded-full shadow-md text-[11px] font-extrabold text-gray-800 border border-gray-100 mb-1 whitespace-nowrap">
@@ -434,29 +371,10 @@ const Dashboard = () => {
                         <div>
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Location</label>
                             <div className="relative">
-                                <Search className="absolute left-4 top-4 text-gray-400" size={20} />
-                                <input 
-                                    type="text"
-                                    placeholder="Search (e.g. Redpath)"
-                                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-base font-medium"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                {/* Dropdown Suggestions */}
-                                {predictions.length > 0 && (
-                                  <ul className="absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-gray-50">
-                                    {predictions.map((p) => (
-                                      <li 
-                                        key={p.place_id} 
-                                        onClick={() => handleSelectPrediction(p.place_id)}
-                                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
-                                      >
-                                        <p className="font-bold text-gray-800 text-sm truncate">{p.structured_formatting.main_text}</p>
-                                        <p className="text-xs text-gray-500 truncate">{p.structured_formatting.secondary_text}</p>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
+                                <label>Where are you?</label>
+                                <select value={selectedPlace} onChange={(e) => setSelectedPlace(Number(e.target.value))}>
+                                    {CAMPUS_BUILDINGS.map((loc, i) => <option key={i} value={i}>{loc.name}</option>)}
+                                </select>
                             </div>
                         </div>
 
